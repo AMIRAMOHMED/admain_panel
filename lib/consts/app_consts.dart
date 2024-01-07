@@ -9,6 +9,11 @@ class AppConstants {
     'Clothes',
     'Beauty',
     'Shoes',
+    "Laptops",
+    "Cosmetics",
+    "Electronics",
+    "Books",
+    "Accessories",
     'Funiture',
     'Watches',
   ];

@@ -1,3 +1,4 @@
+import 'package:admain_panel/screens/inner_Screen/edit_uploaded_product_screen.dart';
 import 'package:fancy_shimmer_image/fancy_shimmer_image.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -29,11 +30,7 @@ class _ProductWidgetState extends State<ProductWidget> {
       padding: const EdgeInsets.all(3.0),
       child: GestureDetector(
         onTap: () async {
-          // await Navigator.pushNamed(
-          //   context,
-          //   ProductDetails.routName,
-          //   arguments: getCurrProduct.productId,
-          // );
+        Navigator.push(context, MaterialPageRoute(builder: (context)=>EditOrUploadProductScreen(productModel: getCurrProduct,)));
         },
         child: Column(
           children: [

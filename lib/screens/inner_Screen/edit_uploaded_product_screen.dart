@@ -1,9 +1,13 @@
+import 'dart:io';
+
 import 'package:admain_panel/consts/app_consts.dart';
+import 'package:dotted_border/dotted_border.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../consts/my_validators.dart';
+import '../../models/product_model.dart';
 import '../../services/my_app_method.dart';
 import '../../widgets/subtitle_text.dart';
 import '../../widgets/title_text.dart';
@@ -13,7 +17,10 @@ class EditOrUploadProductScreen extends StatefulWidget {
 
   const EditOrUploadProductScreen({
     super.key,
+    this.productModel,
   });
+
+  final ProductModel? productModel;
 
   @override
   State<EditOrUploadProductScreen> createState() =>
@@ -21,21 +28,31 @@ class EditOrUploadProductScreen extends StatefulWidget {
 }
 
 class _EditOrUploadProductScreenState extends State<EditOrUploadProductScreen> {
+  String? productNetworkImage;
   final _formKey = GlobalKey<FormState>();
   XFile? _pickedImage;
-
+  bool isEditing = false;
   late TextEditingController _titleController,
       _priceController,
       _descriptionController,
       _quantityController;
   String? _categoryValue;
-  @override
+
   @override
   void initState() {
-    _titleController = TextEditingController(text: "");
-    _priceController = TextEditingController(text: "");
-    _descriptionController = TextEditingController(text: "");
-    _quantityController = TextEditingController(text: "");
+    if (widget.productModel != null) {
+      isEditing = true;
+      productNetworkImage = widget.productModel!.productImage;
+      _categoryValue = widget.productModel!.productCategory;
+    }
+    _titleController =
+        TextEditingController(text: widget.productModel?.productTitle);
+    _priceController =
+        TextEditingController(text: widget.productModel?.productPrice);
+    _descriptionController =
+        TextEditingController(text: widget.productModel?.productDescription);
+    _quantityController =
+        TextEditingController(text: widget.productModel?.productQuantity);
 
     super.initState();
   }
@@ -60,6 +77,7 @@ class _EditOrUploadProductScreenState extends State<EditOrUploadProductScreen> {
   void removePickedImage() {
     setState(() {
       _pickedImage = null;
+      productNetworkImage = null;
     });
   }
 
@@ -68,6 +86,14 @@ class _EditOrUploadProductScreenState extends State<EditOrUploadProductScreen> {
       MyAppMethods.showErrorORWarningDialog(
         context: context,
         subtitle: "Category is empty",
+        fct: () {},
+      );
+      return;
+    }
+    if (_pickedImage == null && productNetworkImage == null) {
+      MyAppMethods.showErrorORWarningDialog(
+        context: context,
+        subtitle: "PleasePickImage",
         fct: () {},
       );
       return;
@@ -81,7 +107,16 @@ class _EditOrUploadProductScreenState extends State<EditOrUploadProductScreen> {
     final isValid = _formKey.currentState!.validate();
     FocusScope.of(context).unfocus();
 
-    if (isValid) {}
+    if (isValid) {
+      if (_pickedImage == null && productNetworkImage == null) {
+        MyAppMethods.showErrorORWarningDialog(
+          context: context,
+          subtitle: "PleasePickImage",
+          fct: () {},
+        );
+        return;
+      }
+    }
   }
 
   Future<void> localImagePicker() async {
@@ -99,10 +134,12 @@ class _EditOrUploadProductScreenState extends State<EditOrUploadProductScreen> {
       removeFCT: () {
         setState(() {
           _pickedImage = null;
+          productNetworkImage = null;
         });
       },
     );
   }
+
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
@@ -148,13 +185,19 @@ class _EditOrUploadProductScreenState extends State<EditOrUploadProductScreen> {
                     ),
                   ),
                   icon: const Icon(Icons.upload),
-                  label: const Text(
-                    "Upload Product",
-                    style: TextStyle(
+                  label: Text(
+                    isEditing ? "Edit Product" : "Upload Product",
+                    style: const TextStyle(
                       fontSize: 20,
                     ),
                   ),
-                  onPressed: () { _uploadProduct();},
+                  onPressed: () {
+                    if (isEditing) {
+                      _editProduct();
+                    } else {
+                      _uploadProduct();
+                    }
+                  },
                 ),
               ],
             ),
@@ -179,17 +222,87 @@ class _EditOrUploadProductScreenState extends State<EditOrUploadProductScreen> {
                   const SizedBox(
                     height: 20,
                   ),
-                  /* Image picker here ***********************************/
-
+                  if (isEditing && productNetworkImage != null) ...[
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: Image.network(
+                        productNetworkImage!,
+                        height: size.width * 0.5,
+                        alignment: Alignment.center,
+                      ),
+                    ),
+                  ] else if (_pickedImage == null) ...[
+                    SizedBox(
+                      height: size.width * .4,
+                      width: size.width * .4 + 10,
+                      child: DottedBorder(
+                          radius: const Radius.circular(15),
+                          color: Colors.blue,
+                          child: Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                const Icon(
+                                  Icons.image_outlined,
+                                  size: 80,
+                                  color: Colors.blue,
+                                ),
+                                TextButton(
+                                    onPressed: () {
+                                      localImagePicker();
+                                    },
+                                    child: const Text("Pick Product image"))
+                              ],
+                            ),
+                          )),
+                    ),
+                  ] else ...[
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: Image.file(
+                        File(
+                          _pickedImage!.path,
+                        ),
+                        // width: size.width * 0.7,
+                        height: size.width * 0.5,
+                        alignment: Alignment.center,
+                      ),
+                    ),
+                  ],
+                  if (_pickedImage != null && productNetworkImage != null) ...[
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        TextButton(
+                          onPressed: () {
+                            localImagePicker();
+                          },
+                          child: const Text("Pick another image"),
+                        ),
+                        TextButton(
+                          onPressed: () {
+                            removePickedImage();
+                          },
+                          child: const Text(
+                            "Remove image",
+                            style: TextStyle(color: Colors.red),
+                          ),
+                        ),
+                      ],
+                    )
+                  ],
                   const SizedBox(
                     height: 25,
                   ),
                   DropdownButton(
-                      hint: const Text("Select Category"),
+                      hint: Text(_categoryValue ?? "Select Category"),
                       value: _categoryValue,
                       items: AppConstants.categoriesDropDownList,
                       onChanged: (String? value) {
-                        setState(() {_categoryValue = value;});
+                        setState(() {
+                          _categoryValue = value;
+                        });
                       }),
                   const SizedBox(
                     height: 25,
