@@ -17,6 +17,14 @@ dependencies:
   # State Management
   provider: ^6.1.2
 
+  # Shared Preferences
+  shared_preferences: ^2.2.3
+
+  # Permission
+  permission_handler: ^11.3.1
+  # Device Info
+  device_info_plus: ^10.1.0
+
 
   # Icons
   flutter_iconly: ^1.0.2
@@ -26,6 +34,7 @@ dependencies:
   shimmer: ^3.0.0
   fancy_shimmer_image: ^2.0.3
   dynamic_height_grid_view: ^0.0.3
+  dotted_border: ^2.1.0
 
   # Image Picker
   image_picker: ^1.1.1

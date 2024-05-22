@@ -1,13 +1,14 @@
 import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:dotted_border/dotted_border.dart';
 import 'package:firebase_storage/firebase_storage.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../consts/app_consts.dart';
@@ -187,12 +188,22 @@ class _EditOrUploadProductScreenState extends State<EditOrUploadProductScreen> {
     await MyAppMethods.imagePickerDialog(
       context: context,
       cameraFCT: () async {
-        _pickedImage = await picker.pickImage(source: ImageSource.camera);
-        setState(() {});
+        final status = await requestPermission();
+        if (status.isGranted) {
+          _pickedImage = await picker.pickImage(source: ImageSource.camera);
+          setState(() {});
+        } else {
+          await openAppSettings();
+        }
       },
       galleryFCT: () async {
-        _pickedImage = await picker.pickImage(source: ImageSource.gallery);
-        setState(() {});
+        final status = await requestPermission();
+        if (status.isGranted) {
+          _pickedImage = await picker.pickImage(source: ImageSource.gallery);
+          setState(() {});
+        } else {
+          await openAppSettings();
+        }
       },
       removeFCT: () {
         setState(() {
@@ -200,6 +211,24 @@ class _EditOrUploadProductScreenState extends State<EditOrUploadProductScreen> {
         });
       },
     );
+  }
+
+  Future<PermissionStatus> requestPermission() async {
+    PermissionStatus newPermReq;
+
+    final deviceInfo = DeviceInfoPlugin();
+    if (Platform.isAndroid) {
+      final androidInfo = await deviceInfo.androidInfo;
+      final androidSdkInt = androidInfo.version.sdkInt;
+      if (androidSdkInt < 33) {
+        newPermReq = await Permission.storage.request();
+      } else {
+        newPermReq = await Permission.photos.request();
+      }
+    } else {
+      newPermReq = await Permission.photos.request();
+    }
+    return newPermReq;
   }
 
   @override
